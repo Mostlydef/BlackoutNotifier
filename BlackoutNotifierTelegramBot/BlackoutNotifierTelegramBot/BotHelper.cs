@@ -16,6 +16,7 @@ namespace BlackoutNotifierTelegramBot
         private const string _buttonAndroidId = "Ввести Android ID";
         private const string _buttonView = "Посмотреть";
         private const string _buttonClean = "Очистить";
+        private const string _buttonSend = "Отправить";
 
         internal static async Task Update(ITelegramBotClient telegramBotClient, Update update, CancellationToken cancellationToken)
         {
@@ -34,10 +35,16 @@ namespace BlackoutNotifierTelegramBot
                                 await telegramBotClient.SendTextMessageAsync(message.Chat.Id, message.Text, replyMarkup: GetButtons());
                                 break;
                             case _buttonView:
-                                await telegramBotClient.SendTextMessageAsync(message.Chat.Id, message.Text, replyMarkup: GetButtons());
+                                //TODO:here will be API call to get AndroidId
+                                await telegramBotClient.SendTextMessageAsync(message.Chat.Id, "TODO:here will be API call to get AndroidId", replyMarkup: GetButtons());
                                 break;
                             case _buttonClean:
-                                await telegramBotClient.SendTextMessageAsync(message.Chat.Id, message.Text, replyMarkup: GetButtons());
+                                //TODO:here will be API call to clear AndroidID
+                                await telegramBotClient.SendTextMessageAsync(message.Chat.Id, "TODO:here will be API call to clear AndroidID", replyMarkup: GetButtons());
+                                break;
+                            case _buttonSend:
+                                //TODO:here will be API call to send AndroidID
+                                await telegramBotClient.SendTextMessageAsync(message.Chat.Id, "TODO:here will be API call to send AndroidID", replyMarkup: GetButtons());
                                 break;
                         }
                     }
@@ -59,7 +66,7 @@ namespace BlackoutNotifierTelegramBot
                     },
                     new List<KeyboardButton>
                     {
-                        new KeyboardButton(_buttonClean)
+                        new KeyboardButton(_buttonClean), new KeyboardButton(_buttonSend)
                     }
                 }
             );
