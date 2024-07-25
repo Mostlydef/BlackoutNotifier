@@ -17,6 +17,7 @@ namespace TelegramBot.Services
     {
         private readonly ITelegramBotClient _botClient;
         private readonly ILogger<UpdateHandler> _logger;
+        private static readonly HttpClient _httpClient = new HttpClient();
 
 
         public UpdateHandler(ITelegramBotClient botClient, ILogger<UpdateHandler> logger)
@@ -47,93 +48,32 @@ namespace TelegramBot.Services
                 return;
             var action = messageText.Split(' ')[0] switch
             {
-                "/inline_keyboard" => SendInlineKeyboard(_botClient, message, cancellationToken),
-                "/android_id" => SendAndroidId(_botClient, message, cancellationToken),
-                "/keyboard" => SendReplyKeyboard(_botClient, message, cancellationToken),
-                "/remove" => RemoveKeyboard(_botClient, message, cancellationToken),
-                "/inline_mode" => StartInlineQuery(_botClient, message, cancellationToken),
+                "/android_id" => OnStart(_botClient, message, cancellationToken),
                 "/throw" => FailingHandler(_botClient, message, cancellationToken),
-                "/start" => Usage(_botClient, message, cancellationToken),
+                "/start" => OnStart(_botClient, message, cancellationToken),
                 _ => Usage(_botClient, message, cancellationToken)
             };
             Message sentMessage = await action;
             _logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage.MessageId);
 
-            static async Task<Message> SendInlineKeyboard(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+
+            static async Task<Message> OnStart(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
             {
-                await botClient.SendChatActionAsync(
-                    chatId: message.Chat.Id,
-                    chatAction: ChatAction.Typing,
-                    cancellationToken: cancellationToken);
-
-                await Task.Delay(500, cancellationToken);
-
-                InlineKeyboardMarkup inlineKeyboard = new(
-                    new[]
-                    {
-                        new[]
-                        {
-                            InlineKeyboardButton.WithCallbackData("1.1", "11"),
-                            InlineKeyboardButton.WithCallbackData("1.2", "12"),
-                        },
-                        new[]
-                        {
-                            InlineKeyboardButton.WithCallbackData("2.1", "21"),
-                            InlineKeyboardButton.WithCallbackData("2.2", "22"),
-                        },
-                    });
-
-                return await botClient.SendTextMessageAsync(
-                    chatId: message.Chat.Id,
-                    text: "Choose",
-                    replyMarkup: inlineKeyboard,
-                    cancellationToken: cancellationToken);
-            }
-
-            static async Task<Message> SendAndroidId(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
-            {
-
                 return await botClient.SendTextMessageAsync(
                    chatId: message.Chat.Id,
-                   text: "/AndroidID",
+                   text: "Введите AndroidId",
                    cancellationToken: cancellationToken);
-            }
-
-            static async Task<Message> SendReplyKeyboard(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
-            {
-                ReplyKeyboardMarkup replyKeyboardMarkup = new(
-                    new[]
-                    {
-                        new KeyboardButton[] {"/AndroidID"}
-                    })
-                { ResizeKeyboard = true };
-
-                return await botClient.SendTextMessageAsync(
-                    chatId: message.Chat.Id,
-                    text: "/AndroidID",
-                    replyMarkup: replyKeyboardMarkup,
-                    cancellationToken: cancellationToken);
-            }
-
-            static async Task<Message> RemoveKeyboard(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
-            {
-                return await botClient.SendTextMessageAsync(
-                    chatId: message.Chat.Id,
-                    text: "Removing keyboard",
-                    replyMarkup: new ReplyKeyboardRemove(),
-                    cancellationToken: cancellationToken);
             }
 
             static async Task<Message> Usage(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
             {
-                const string usage = "Usage:\n" +
-                                 "/inline_keyboard - send inline keyboard\n" +
-                                 "/start    - send custom keyboard\n" +
-                                 "/remove      - remove custom keyboard\n" +
-                                 "/photo       - send a photo\n" +
-                                 "/request     - request location or contact\n" +
-                                 "/inline_mode - send keyboard with Inline Query";
-
+                using var request = new HttpRequestMessage(HttpMethod.Post, "https://localhost:5001/data");
+                request.Content = new StringContent(message.Text);
+                using var response = await _httpClient.SendAsync(request, cancellationToken);
+                string responseText = await response.Content.ReadAsStringAsync();
+                string usage = $"Usage:\n" +
+                                 $"/android_id - {message.Text}\n" +
+                                 responseText;
                 return await botClient.SendTextMessageAsync(
                     chatId: message.Chat.Id,
                     text: usage,
@@ -141,17 +81,6 @@ namespace TelegramBot.Services
                     cancellationToken: cancellationToken);
             }
 
-            static async Task<Message> StartInlineQuery(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
-            {
-                InlineKeyboardMarkup inlineKeyboard = new(
-                    InlineKeyboardButton.WithSwitchInlineQueryCurrentChat("Inline Mode"));
-
-                return await botClient.SendTextMessageAsync(
-                    chatId: message.Chat.Id,
-                    text: "Press Inline Query",
-                    replyMarkup: inlineKeyboard,
-                    cancellationToken: cancellationToken);
-            }
 
             static Task<Message> FailingHandler(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
             {
