@@ -11,19 +11,23 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InlineQueryResults;
 using Telegram.Bot.Types.ReplyMarkups;
 
+using TelegramBot.Networking.HttpDataSendler;
+using TelegramBot.Networking.Interfaces;
+
 namespace TelegramBot.Services
 {
     public class UpdateHandler : IUpdateHandler
     {
         private readonly ITelegramBotClient _botClient;
         private readonly ILogger<UpdateHandler> _logger;
-        private static readonly HttpClient _httpClient = new HttpClient();
+        private readonly IHttpSendler _httpSendler;
 
 
         public UpdateHandler(ITelegramBotClient botClient, ILogger<UpdateHandler> logger)
         {
             _botClient = botClient;
             _logger = logger;
+            _httpSendler = new HttpSendler(new HttpClient());
         }
         public async Task HandleUpdateAsync(ITelegramBotClient _, Update update, CancellationToken cancellationToken)
         {
@@ -51,7 +55,7 @@ namespace TelegramBot.Services
                 "/android_id" => OnStart(_botClient, message, cancellationToken),
                 "/throw" => FailingHandler(_botClient, message, cancellationToken),
                 "/start" => OnStart(_botClient, message, cancellationToken),
-                _ => Usage(_botClient, message, cancellationToken)
+                _ => Usage(_botClient, message, _httpSendler, cancellationToken)
             };
             Message sentMessage = await action;
             _logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage.MessageId);
@@ -65,12 +69,14 @@ namespace TelegramBot.Services
                    cancellationToken: cancellationToken);
             }
 
-            static async Task<Message> Usage(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+            static async Task<Message> Usage(ITelegramBotClient botClient, Message message, IHttpSendler httpSendler, CancellationToken cancellationToken)
             {
-                using var request = new HttpRequestMessage(HttpMethod.Post, "https://localhost:5001/data");
-                request.Content = new StringContent(message.Text);
-                using var response = await _httpClient.SendAsync(request, cancellationToken);
-                string responseText = await response.Content.ReadAsStringAsync();
+                string responseText = "";
+                if (!String.IsNullOrWhiteSpace(message.Text))
+                {
+                    responseText = await httpSendler.SendMessagePost(message.Text, cancellationToken);
+                }
+
                 string usage = $"Usage:\n" +
                                  $"/android_id - {message.Text}\n" +
                                  responseText;
