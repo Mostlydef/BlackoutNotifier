@@ -1,41 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
 using Telegram.Bot;
-using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types;
 using TelegramBot.Networking.Interfaces;
 using TelegramBot.Services;
-using Microsoft.VisualBasic;
-using Telegram.Bot.Types.ReplyMarkups;
 
 
 namespace TelegramBot.Tests.Services.Tests
 {
     public class UpdateHandlerTextMessageTest
     {
-        private readonly Mock<ITelegramBotClient> _mockBotClient;
+        private readonly Mock<ITelegramBotClientWrapper> _mockBotClientWrapper;
         private readonly Mock<ILogger<UpdateHandler>> _mockLogger;
         private readonly Mock<IHttpSendler> _mockHttpSendler;
         private readonly UpdateHandler _updateHandler;
+        private readonly Mock<ITelegramBotClientFactory> _mockTelegramBotClientFactory;
+        private readonly Mock<ITelegramBotClient> _mockTelegramBotClient;
 
         public UpdateHandlerTextMessageTest()
         {
-            _mockBotClient = new Mock<ITelegramBotClient>();
+            _mockTelegramBotClientFactory = new Mock<ITelegramBotClientFactory>();
+            _mockTelegramBotClient = new Mock<ITelegramBotClient>();
+            _mockBotClientWrapper = new Mock<ITelegramBotClientWrapper>();
+
+            _mockTelegramBotClientFactory
+                .Setup(x => x.CreateWrapper(_mockTelegramBotClient.Object))
+                .Returns(_mockBotClientWrapper.Object);
+            
             _mockLogger = new Mock<ILogger<UpdateHandler>>();
             _mockHttpSendler = new Mock<IHttpSendler>();
-            _updateHandler = new UpdateHandler(_mockBotClient.Object, _mockLogger.Object);
+            _updateHandler = new UpdateHandler(_mockTelegramBotClientFactory.Object, _mockLogger.Object);
         }
 
         [Fact]
         public async Task HandleUpdateAsync_ReceviesMessageResponds()
         {
             // Arrange
-            var chatId = 12345;
+            long chatId = 12345;
             var messageText = "/start";
             var message = new Message
             {
@@ -51,38 +52,20 @@ namespace TelegramBot.Tests.Services.Tests
                 Message = message
             };
 
-            _mockBotClient.Setup(x => x.SendTextMessageAsync(
-                It.Is<ChatId>(id => id.Identifier == chatId),
-                "Введите AndroidId",
-                null,
-                null,
-                null,
-                false,
-                false,
-                false,
-                null,
-                null,
-                null,
-                CancellationToken.None
+            _mockBotClientWrapper.Setup(x => x.SendTextMessageAsync(
+                chatId,
+                "Введите AndroidId", 
+                It.IsAny<CancellationToken>()
             )).ReturnsAsync(new Message { MessageId = 1 });
 
             // Act
-            await _updateHandler.HandleUpdateAsync(_mockBotClient.Object, update, CancellationToken.None);
+            await _updateHandler.HandleUpdateAsync(_mockTelegramBotClient.Object, update, CancellationToken.None);
 
             // Assert
-            _mockBotClient.Verify(x => x.SendTextMessageAsync(
-                It.Is<ChatId>(id => id.Identifier == chatId),
-                "Введите AndroidId",
-                null,
-                null,
-                null,
-                false,
-                false,
-                false,
-                null,
-                false,
-                null,
-                CancellationToken.None
+            _mockBotClientWrapper.Verify(x => x.SendTextMessageAsync(
+                chatId,
+                "Введите AndroidId", 
+                It.IsAny<CancellationToken>()
             ), Times.Once);
 
         }
