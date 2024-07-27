@@ -22,6 +22,7 @@ namespace TelegramBot
                     });
                     services.AddScoped<UpdateHandler>();
                     services.AddScoped<ReceiverService>();
+                    services.AddScoped<ITelegramBotClientFactory, TelegramBotClientFactory>();
 
                     services.AddHostedService<PollingService>();
 

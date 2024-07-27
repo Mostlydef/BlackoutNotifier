@@ -18,27 +18,30 @@ namespace TelegramBot.Services
 {
     public class UpdateHandler : IUpdateHandler
     {
-        private readonly ITelegramBotClient _botClient;
         private readonly ILogger<UpdateHandler> _logger;
         private readonly IHttpSendler _httpSendler;
+        private readonly ITelegramBotClientFactory _telegramBotClientFactory;
 
 
-        public UpdateHandler(ITelegramBotClient botClient, ILogger<UpdateHandler> logger)
+        public UpdateHandler(ITelegramBotClientFactory telegramBotClientFactory, ILogger<UpdateHandler> logger)
         {
-            _botClient = botClient;
             _logger = logger;
+            _telegramBotClientFactory = telegramBotClientFactory;
             _httpSendler = new HttpSendler(new HttpClient());
         }
-        public async Task HandleUpdateAsync(ITelegramBotClient _, Update update, CancellationToken cancellationToken)
+
+        public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
+            var wrapper = _telegramBotClientFactory.CreateWrapper(botClient);
+            
             if(update.Type == UpdateType.Message && update.Message != null)
             {
-                await BotOnMessageReceived(update.Message, cancellationToken);
+                await BotOnMessageReceived(wrapper, update.Message, cancellationToken);
             }
             await UnknownUpdateHandlerAsync(update, cancellationToken);
         }
 
-        private async Task BotOnMessageReceived(Message message, CancellationToken cancellationToken)
+        private async Task BotOnMessageReceived(ITelegramBotClientWrapper botClient, Message message, CancellationToken cancellationToken)
         {
             string messageText;
             _logger.LogInformation("Receive message type: {MessageType}", message.Type);
@@ -50,55 +53,53 @@ namespace TelegramBot.Services
             switch (messageText)
             {
                 case "/android_id":
-                    sentMessage = await OnStart(_botClient, message, cancellationToken);
+                    sentMessage = await OnStart(botClient, message, cancellationToken);
                     break;
                 case "/throw":
-                    sentMessage = await FailingHandler(_botClient, message, cancellationToken);
+                    sentMessage = await FailingHandler(botClient, message, cancellationToken);
                     break;
                 case "/start":
-                    sentMessage = await OnStart(_botClient, message, cancellationToken);
+                    sentMessage = await OnStart(botClient, message, cancellationToken);
                     break;
                 default:
-                    sentMessage = await Usage(_botClient, message, _httpSendler, cancellationToken);
+                    sentMessage = await Usage(botClient, message, _httpSendler, cancellationToken);
                     break;
             }
 
             _logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage.MessageId);
-
-
-            static async Task<Message> OnStart(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
-            {
-                return await botClient.SendTextMessageAsync(
-                   chatId: message.Chat.Id,
-                   text: "Введите AndroidId",
-                   cancellationToken: cancellationToken);
-            }
-
-            static async Task<Message> Usage(ITelegramBotClient botClient, Message message, IHttpSendler httpSendler, CancellationToken cancellationToken)
-            {
-                string responseText = "";
-                if (!String.IsNullOrWhiteSpace(message.Text))
-                {
-                    responseText = await httpSendler.SendMessagePost(message.Text, cancellationToken);
-                }
-
-                string usage = $"Usage:\n" +
-                                 $"/android_id - {message.Text}\n" +
-                                 responseText;
-                return await botClient.SendTextMessageAsync(
-                    chatId: message.Chat.Id,
-                    text: usage,
-                    replyMarkup: new ReplyKeyboardRemove(),
-                    cancellationToken: cancellationToken);
-            }
-
-
-            static Task<Message> FailingHandler(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
         }
+
+        static async Task<Message> OnStart(ITelegramBotClientWrapper botClient, Message message, CancellationToken cancellationToken)
+        {
+            return await botClient.SendTextMessageAsync(
+               chatId: message.Chat.Id,
+               text: "Введите AndroidId",
+               cancellationToken: cancellationToken);
+        }
+
+        static async Task<Message> Usage(ITelegramBotClientWrapper botClient, Message message, IHttpSendler httpSendler, CancellationToken cancellationToken)
+        {
+            string responseText = "";
+            if (!String.IsNullOrWhiteSpace(message.Text))
+            {
+                responseText = await httpSendler.SendMessagePost(message.Text, cancellationToken);
+            }
+
+            string usage = $"Usage:\n" +
+                             $"/android_id - {message.Text}\n" +
+                             responseText;
+            return await botClient.SendTextMessageAsyncWithRemoveMarkup(
+                chatId: message.Chat.Id,
+                text: usage,
+                cancellationToken: cancellationToken);
+        }
+
+
+        static Task<Message> FailingHandler(ITelegramBotClientWrapper botClient, Message message, CancellationToken cancellationToken)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
 
         private Task UnknownUpdateHandlerAsync(Update update, CancellationToken cancellationToken)
         {
