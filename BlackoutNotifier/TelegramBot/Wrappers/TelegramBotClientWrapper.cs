@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TelegramBot;
 
+[ExcludeFromCodeCoverage]
 public class TelegramBotClientWrapper : ITelegramBotClientWrapper
 {
     private readonly ITelegramBotClient _telegramBotClient;
