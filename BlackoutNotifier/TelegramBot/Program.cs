@@ -1,5 +1,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Polling;
+using TelegramBot.Networking.HttpDataSendler;
+using TelegramBot.Networking.Interfaces;
 using TelegramBot.Services;
 
 namespace TelegramBot
@@ -22,6 +24,7 @@ namespace TelegramBot
                     });
                     services.AddScoped<UpdateHandler>();
                     services.AddScoped<ReceiverService>();
+                    services.AddScoped<IHttpSendler, IHttpSendler>(x => new HttpSendler(new HttpClient()));
                     services.AddScoped<ITelegramBotClientFactory, TelegramBotClientFactory>();
 
                     services.AddHostedService<PollingService>();
