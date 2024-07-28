@@ -13,21 +13,22 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 using TelegramBot.Networking.HttpDataSendler;
 using TelegramBot.Networking.Interfaces;
+using TelegramBot.Wrappers;
 
 namespace TelegramBot.Services
 {
     public class UpdateHandler : IUpdateHandler
     {
-        private readonly ILogger<UpdateHandler> _logger;
+        private readonly ILoggerWrapper<UpdateHandler> _loggerWrapper;
         private readonly IHttpSendler _httpSendler;
         private readonly ITelegramBotClientFactory _telegramBotClientFactory;
 
 
-        public UpdateHandler(ITelegramBotClientFactory telegramBotClientFactory, ILogger<UpdateHandler> logger)
+        public UpdateHandler(ITelegramBotClientFactory telegramBotClientFactory, ILoggerWrapper<UpdateHandler> loggerWrapper, IHttpSendler httpSendler)
         {
-            _logger = logger;
+            _loggerWrapper = loggerWrapper;
             _telegramBotClientFactory = telegramBotClientFactory;
-            _httpSendler = new HttpSendler(new HttpClient());
+            _httpSendler = httpSendler;
         }
 
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
@@ -44,7 +45,7 @@ namespace TelegramBot.Services
         private async Task BotOnMessageReceived(ITelegramBotClientWrapper botClient, Message message, CancellationToken cancellationToken)
         {
             string messageText;
-            _logger.LogInformation("Receive message type: {MessageType}", message.Type);
+            _loggerWrapper.LogInformation("Receive message type: {MessageType}", message.Type);
             if (String.IsNullOrWhiteSpace(message.Text))
                 return;
             else
@@ -66,7 +67,7 @@ namespace TelegramBot.Services
                     break;
             }
 
-            _logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage.MessageId);
+            _loggerWrapper.LogInformation("The message was sent with id: {SentMessageId}", sentMessage.MessageId);
         }
 
         static async Task<Message> OnStart(ITelegramBotClientWrapper botClient, Message message, CancellationToken cancellationToken)
@@ -103,7 +104,7 @@ namespace TelegramBot.Services
 
         private Task UnknownUpdateHandlerAsync(Update update, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Unknown update type: {UpdateType}", update.Type);
+            _loggerWrapper.LogInformation("Unknown update type: {UpdateType}", update.Type);
             return Task.CompletedTask;
         }
 
@@ -115,7 +116,7 @@ namespace TelegramBot.Services
                 _ => exception.ToString()
             };
 
-            _logger.LogInformation("HandleError: {ErrorMessage}", ErrorMessage);
+            _loggerWrapper.LogInformation("HandleError: {ErrorMessage}", ErrorMessage);
 
             if (exception is RequestException)
                 await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
