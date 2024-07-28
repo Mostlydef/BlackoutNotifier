@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace TelegramBot.Wrappers
 {
-    internal interface ILoggerWrapper
+    public interface ILoggerWrapper<out T>
     {
+        void LogInformation(string? message, params object?[] args);
     }
 }
