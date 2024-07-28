@@ -51,6 +51,9 @@ namespace TelegramBot.Tests.Services.Tests
                 Id = 1,
                 Message = message
             };
+            var mockBotClient = new Mock<ITelegramBotClient>();
+            var mockLogger = new Mock<ILogger<UpdateHandler>>();
+            var udateHandler = new UpdateHandler(mockBotClient.Object, mockLogger.Object);
 
             _mockBotClientWrapper.Setup(x => x.SendTextMessageAsync(
                 chatId,
