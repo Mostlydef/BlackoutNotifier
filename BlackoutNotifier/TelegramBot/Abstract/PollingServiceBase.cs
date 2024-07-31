@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TelegramBot.Wrappers;
 
 namespace TelegramBot.Abstract
 {
@@ -10,19 +11,19 @@ namespace TelegramBot.Abstract
         where TReceiverService : IReceiverService
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger _logger;
+        private readonly ILoggerWrapper<PollingServiceBase<TReceiverService>> _loggerWrapper;
 
         internal PollingServiceBase(
         IServiceProvider serviceProvider,
-        ILogger<PollingServiceBase<TReceiverService>> logger)
+        ILoggerWrapper<PollingServiceBase<TReceiverService>> logger)
         {
             _serviceProvider = serviceProvider;
-            _logger = logger;
+            _loggerWrapper = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Starting polling service");
+            _loggerWrapper.LogInformation("Starting polling service");
 
             await DoWork(cancellationToken);
         }
@@ -40,7 +41,7 @@ namespace TelegramBot.Abstract
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError("Polling failed with exception: {Exception}", ex);
+                    _loggerWrapper.LogError("Polling failed with exception: {Exception}", ex);
 
                     await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
                 }
