@@ -1,8 +1,10 @@
 using Telegram.Bot;
 using Telegram.Bot.Polling;
+using TelegramBot.Abstract;
 using TelegramBot.Networking.HttpDataSendler;
 using TelegramBot.Networking.Interfaces;
 using TelegramBot.Services;
+using TelegramBot.Wrappers;
 
 namespace TelegramBot
 {
@@ -26,6 +28,11 @@ namespace TelegramBot
                     services.AddScoped<ReceiverService>();
                     services.AddScoped<IHttpSendler, IHttpSendler>(x => new HttpSendler(new HttpClient()));
                     services.AddScoped<ITelegramBotClientFactory, TelegramBotClientFactory>();
+                    services.AddScoped<ITelegramBotClientWrapper,  TelegramBotClientWrapper>();
+                    services.AddScoped<ILoggerWrapper<UpdateHandler>,  LoggerWrapper<UpdateHandler>>();
+                    services.AddSingleton<ILoggerWrapper<PollingService>, LoggerWrapper<PollingService>>();
+                    services.AddScoped<ILoggerWrapper<ReceiverServiceBase<UpdateHandler>>, LoggerWrapper<ReceiverServiceBase<UpdateHandler>>>();
+                    services.AddScoped<ITelegramBotClientWrapper, TelegramBotClientWrapper>();
 
                     services.AddHostedService<PollingService>();
 
