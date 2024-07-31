@@ -9,6 +9,7 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using TelegramBot.Abstract;
+using TelegramBot.Wrappers;
 
 namespace TelegramBot.Services
 {
@@ -16,9 +17,9 @@ namespace TelegramBot.Services
     {
 
         public ReceiverService(
-       ITelegramBotClient botClient,
+       ITelegramBotClientWrapper botClient,
        UpdateHandler updateHandler,
-       ILogger<ReceiverServiceBase<UpdateHandler>> logger)
+       ILoggerWrapper<ReceiverServiceBase<UpdateHandler>> logger)
        : base(botClient, updateHandler, logger)
         {
         }
