@@ -21,15 +21,15 @@ jobs:
         ref: main
 
     - name: Checkout solution branch
-      run: git fetch BlackoutNotifier telegram-bot && git checkout telegram-bot
+      run: git fetch origin telegram-bot && git checkout telegram-bot
       
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore /BlackoutNotifier
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build /BlackoutNotifier --no-restore 
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test /BlackoutNotifier --no-build --verbosity normal
