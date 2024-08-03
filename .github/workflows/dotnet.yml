@@ -28,8 +28,8 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      run: dotnet restore /BlackoutNotifier
+      run: dotnet restore BlackoutNotifier
     - name: Build
-      run: dotnet build /BlackoutNotifier --no-restore 
+      run: dotnet build BlackoutNotifier --no-restore 
     - name: Test
-      run: dotnet test /BlackoutNotifier --no-build --verbosity normal
+      run: dotnet test BlackoutNotifier --no-build --verbosity normal
