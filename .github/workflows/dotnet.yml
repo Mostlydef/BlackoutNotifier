@@ -21,7 +21,7 @@ jobs:
         ref: main
 
     - name: Checkout solution branch
-      run: git fetch origin telegram-bot && git checkout telegram-bot
+      run: git fetch BlackoutNotifier telegram-bot && git checkout telegram-bot
       
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
