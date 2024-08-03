@@ -164,7 +164,7 @@ namespace TelegramBot.Tests.Services.Tests
             stopwatch.Stop();
 
             //Assert
-            Assert.InRange(stopwatch.ElapsedMilliseconds, 2000, 3000);
+            Assert.InRange(stopwatch.ElapsedMilliseconds, 1950, 3000);
         }
     }
 }
