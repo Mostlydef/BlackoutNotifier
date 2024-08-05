@@ -366,3 +366,4 @@ MigrationBackup/
 .cxx
 local.properties
 .idea
+app/build/
